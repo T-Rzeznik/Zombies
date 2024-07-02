@@ -350,8 +350,6 @@ def main():
             wave += 1
             if wave == 2:
                 show_weapon_upgrade_menu()
-            elif wave == 4:
-                show_ability_upgrade_menu()
             spawn_zombies(wave)
 
         draw_wave_number(display, wave)  # Draw the wave number
