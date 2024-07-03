@@ -18,6 +18,30 @@ Map:
 |Patch Notes|
  -----------
  
+Patch 0.0002
+-------------------------------------
+-Weapons
+Added unlock Feature
+    Shotgun: Wave 3
+    submachine: Wave 5
+    Rifle: Wave 10
+    Sniper: Wave 20
+
+-Player
+Added Attributes no use yet
+
+
+-VFX
+Added current Gun display
+Press "T" to open "switch weapon" menu, menu only shows unlocked weapons
+Added visual to show when gun is unlocked
+
+
+Gun unlock not displaying correctly
+-------------------------------------
+
+
+
 
 Patch 0.0001
 -------------------------------------
