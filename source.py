@@ -45,6 +45,8 @@ class Zombie:
         self.y = y
         self.speed = 2
         self.health = 2  # Default health for zombies
+        self.endurance = 5
+        self.agility = 3
 
     def move_towards_player(self, player):
         angle = math.atan2(player.y - self.y, player.x - self.x)
@@ -63,8 +65,13 @@ class Player:
         self.animation_count = 0
         self.moving_right = False
         self.moving_left = False
+        #Attributes
         self.health = 100
-        self.max_health = 100
+        self.max_health = 100 
+        self.agility = 10 # Speed
+        self.endurance = 10 # health regen
+        self.luck = 5
+        self.unlocked_weapons = ['pistol']  # Start with pistol unlocked
         self.gun = 'pistol'  # current gun
         self.last_shot = 0
         self.shot_delay = 500  # milliseconds between shots for semi-auto guns
@@ -82,6 +89,77 @@ class Player:
             'submachine': 1,
             'sniper': 3
         }
+
+    def switch_gun(self, new_gun):
+        self.gun = new_gun
+
+    def display_current_gun(self, display):  # Added method
+        font = pygame.font.SysFont(None, 30)
+        text = font.render(f'Current Gun: {self.gun.capitalize()}', True, (255, 255, 255))
+        display.blit(text, (SCREEN_WIDTH - text.get_width() - 10, 10))
+        
+    def unlock_weapon(self, weapon):
+        if weapon not in self.unlocked_weapons:
+            self.unlocked_weapons.append(weapon)
+        
+    def can_unlock_weapon(self, wave):
+        unlocked_weapon = None
+        if wave >= 3 and 'shotgun' not in self.unlocked_weapons:
+            self.unlock_weapon('shotgun')
+            unlocked_weapon = 'Shotgun'
+        if wave >= 5 and 'submachine' not in self.unlocked_weapons:
+            self.unlock_weapon('submachine')
+            unlocked_weapon = 'Submachine Gun'
+        if wave >= 10 and 'rifle' not in self.unlocked_weapons:
+            self.unlock_weapon('rifle')
+            unlocked_weapon = 'Rifle'
+        if wave >= 20 and 'sniper' not in self.unlocked_weapons:
+            self.unlock_weapon('sniper')
+            unlocked_weapon = 'Sniper'
+
+        return unlocked_weapon
+    
+    def is_weapon_unlocked(self, weapon):
+        return weapon in self.unlocked_weapons
+
+    def main(self, display):
+        if self.animation_count + 1 >= 16:  # 4 frames x 4 animations = 16
+            self.animation_count = 0
+        self.animation_count += 1
+
+        pygame.draw.rect(display, (255, 0, 0), (self.x, self.y, self.width, self.height))
+        self.moving_right = False
+        self.moving_left = False
+
+    def draw_health_bar(self, display):
+        # Draw the health bar
+        pygame.draw.rect(display, (255, 0, 0), (10, 10, 100, 10))  # Background health bar
+        pygame.draw.rect(display, (0, 255, 0), (10, 10, self.health, 10))  # Current health
+
+    def shoot(self, mouse_x, mouse_y):
+        current_time = pygame.time.get_ticks()
+        if self.gun == 'pistol':
+            if current_time - self.last_shot > self.shot_delay:
+                player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, damage=self.damage['pistol'], max_penetration=self.penetration['pistol']))
+                self.last_shot = current_time
+        elif self.gun == 'shotgun':
+            if current_time - self.last_shot > self.shot_delay:
+                for angle_offset in [-0.2, 0, 0.2]:  # spread of bullets
+                    player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, angle_offset, damage=self.damage['shotgun'], max_penetration=self.penetration['shotgun']))
+                self.last_shot = current_time
+        elif self.gun == 'rifle':
+            if current_time - self.last_shot > 200:  # Slower fire rate for rifle
+                player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, damage=self.damage['rifle'], max_penetration=self.penetration['rifle']))
+                self.last_shot = current_time
+        elif self.gun == 'submachine':
+            if current_time - self.last_shot > 100:  # Even faster fire rate for submachine gun
+                player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, damage=self.damage['submachine'], max_penetration=self.penetration['submachine']))
+                self.last_shot = current_time
+        elif self.gun == 'sniper':
+            if current_time - self.last_shot > 1000:  # Slowest fire rate for sniper
+                player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, damage=self.damage['sniper'], max_penetration=self.penetration['sniper']))
+                self.last_shot = current_time
+
 
     def main(self, display):
         if self.animation_count + 1 >= 16:  # 4 frames x 4 animations = 16
@@ -142,35 +220,22 @@ def push_zombies_away_from_player():
             zombie.x = player.x + math.cos(angle) * safe_distance
             zombie.y = player.y + math.sin(angle) * safe_distance
 
-def show_weapon_upgrade_menu():
+def show_weapon_switch_menu():
     display.fill((0, 0, 0))
     font = pygame.font.SysFont(None, 30)
     text = font.render('Choose Your Weapon', True, (250, 250, 250))
     display.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, 60))
 
-    pistol_button = pygame.Rect(SCREEN_WIDTH//2 - 150, 150, 250, 30)
-    shotgun_button = pygame.Rect(SCREEN_WIDTH//2 - 150, 200, 250, 30)
-    rifle_button = pygame.Rect(SCREEN_WIDTH//2 - 150, 250, 250, 30)
-    submachine_button = pygame.Rect(SCREEN_WIDTH//2 - 150, 300, 250, 30)
-    sniper_button = pygame.Rect(SCREEN_WIDTH//2 - 150, 350, 250, 30)
+     # List of weapons that are unlocked
+    unlocked_weapons = [weapon for weapon in player.unlocked_weapons if player.is_weapon_unlocked(weapon)]
 
-    pygame.draw.rect(display, (0, 0, 255), pistol_button)
-    pygame.draw.rect(display, (0, 0, 255), shotgun_button)
-    pygame.draw.rect(display, (0, 0, 255), rifle_button)
-    pygame.draw.rect(display, (0, 0, 255), submachine_button)
-    pygame.draw.rect(display, (0, 0, 255), sniper_button)
-
-    pistol_text = font.render('Pistol', True, (255, 255, 255))
-    shotgun_text = font.render('Shotgun', True, (255, 255, 255))
-    rifle_text = font.render('Rifle', True, (255, 255, 255))
-    submachine_text = font.render('SMG', True, (255, 255, 255))
-    sniper_text = font.render('Sniper', True, (255, 255, 255))
-
-    display.blit(pistol_text, (pistol_button.x + 100, pistol_button.y + 10))
-    display.blit(shotgun_text, (shotgun_button.x + 80, shotgun_button.y + 10))
-    display.blit(rifle_text, (rifle_button.x + 100, rifle_button.y + 10))
-    display.blit(submachine_text, (submachine_button.x + 100, submachine_button.y + 10))
-    display.blit(sniper_text, (sniper_button.x + 100, sniper_button.y + 10))
+    y_position = 150
+    for weapon in unlocked_weapons:
+        button_rect = pygame.Rect(SCREEN_WIDTH//2 - 150, y_position, 250, 30)
+        pygame.draw.rect(display, (0, 0, 255), button_rect)
+        weapon_text = font.render(weapon.capitalize(), True, (255, 255, 255))
+        display.blit(weapon_text, (button_rect.x + 100, button_rect.y + 10))
+        y_position += 70
 
     pygame.display.update()
 
@@ -180,21 +245,11 @@ def show_weapon_upgrade_menu():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if pistol_button.collidepoint(event.pos):
-                    player.gun = 'pistol'
-                    return
-                elif shotgun_button.collidepoint(event.pos):
-                    player.gun = 'shotgun'
-                    return
-                elif rifle_button.collidepoint(event.pos):
-                    player.gun = 'rifle'
-                    return
-                elif submachine_button.collidepoint(event.pos):
-                    player.gun = 'submachine'
-                    return
-                elif sniper_button.collidepoint(event.pos):
-                    player.gun = 'sniper'
-                    return
+                for i, weapon in enumerate(unlocked_weapons):
+                    button_rect = pygame.Rect(SCREEN_WIDTH//2 - 150, 150 + i * 70, 250, 30)
+                    if button_rect.collidepoint(event.pos):
+                        player.switch_gun(weapon)
+                        return
 
 
 def show_start_menu():
@@ -268,13 +323,22 @@ def draw_background(display, tile):
         for y in range(0, SCREEN_HEIGHT, tile_height):
             display.blit(tile, (x, y))
 
+def display_unlocked_message(display, message):
+    font = pygame.font.SysFont(None, 30)
+    text = font.render(message, True, (255, 255, 255))
+    display.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 100))
+    pygame.display.update()
+    pygame.time.delay(2000)  # Display for 2 seconds
+
 def main():
     global wave  # Declare wave as global
     show_start_menu()
     spawn_zombies(wave)
 
     shooting = False
-
+    unlocked_weapon_message = None
+    weapon_unlocked = False  # Flag to track if a weapon was unlocked
+    
     while True:
         draw_background(display, parking_lot_tile)  # Draw the tiled background
 
@@ -291,6 +355,15 @@ def main():
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     shooting = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_t:  # Press "T" key for weapon upgrade menu
+                    show_weapon_switch_menu()
+            
+            unlocked_weapon = player.can_unlock_weapon(wave)
+            if unlocked_weapon:
+                display_unlocked_message(display, f'Unlocked {unlocked_weapon}!')
+                unlocked_weapon_message = None  # Clear the message after displaying
+
 
         keys = pygame.key.get_pressed()
 
@@ -348,14 +421,18 @@ def main():
         # Check if all zombies are dead to spawn a new wave
         if not zombies:
             wave += 1
-            if wave == 2:
-                show_weapon_upgrade_menu()
+            unlocked_weapon = player.can_unlock_weapon(wave)  # Check for weapon unlocking
+            if unlocked_weapon:
+                unlocked_weapon_message = f'Unlocked {unlocked_weapon}!'
             spawn_zombies(wave)
 
         draw_wave_number(display, wave)  # Draw the wave number
+        player.display_current_gun(display)  # Display current gun
+
 
         clock.tick(fps)
         pygame.display.update()
 
 if __name__ == '__main__':
     main()
+
