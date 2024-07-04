@@ -18,6 +18,20 @@ Map:
 |Patch Notes|
  -----------
  
+
+
+
+
+
+Bug Fix 0.00021
+-------------------------------------
+Guns unlocked are now displayed properly over the players head.
+Gun unlockes reset when the player clicks restart.
+
+Press P for admin GUN
+-------------------------------------
+
+
 Patch 0.0002
 -------------------------------------
 -Weapons
