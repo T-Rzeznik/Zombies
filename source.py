@@ -80,14 +80,16 @@ class Player:
             'shotgun': 1,
             'rifle': 1,
             'submachine': 0.5,
-            'sniper': 2
+            'sniper': 2,
+            'admin': 9000
         }
         self.penetration = {
             'pistol': 1,
             'shotgun': 1,
             'rifle': 1,
             'submachine': 1,
-            'sniper': 3
+            'sniper': 3,
+            'admin': 10
         }
 
     def switch_gun(self, new_gun):
@@ -119,6 +121,10 @@ class Player:
 
         return unlocked_weapon
     
+    def reset_weapon(self):
+        self.unlocked_weapons = ['pistol']
+
+
     def is_weapon_unlocked(self, weapon):
         return weapon in self.unlocked_weapons
 
@@ -159,6 +165,11 @@ class Player:
             if current_time - self.last_shot > 1000:  # Slowest fire rate for sniper
                 player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, damage=self.damage['sniper'], max_penetration=self.penetration['sniper']))
                 self.last_shot = current_time
+        elif self.gun == 'admin':
+            if current_time - self.last_shot > 100:
+                for angle_offset in [-0.2,-0.1,0,0.1, 0.2]:  # spread of bullets
+                    player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, angle_offset, damage=self.damage['admin'], max_penetration=self.penetration['admin']))
+                self.last_shot = current_time
 
 
     def main(self, display):
@@ -198,6 +209,12 @@ class Player:
             if current_time - self.last_shot > 1000:  # Slowest fire rate for sniper
                 player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, damage=self.damage['sniper'], max_penetration=self.penetration['sniper']))
                 self.last_shot = current_time
+        elif self.gun == 'admin':
+            if current_time - self.last_shot > 100:
+                for angle_offset in [-0.2,-0.1,0,0.1, 0.2]:  # spread of bullets
+                    player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, angle_offset, damage=self.damage['admin'], max_penetration=self.penetration['admin']))
+                self.last_shot = current_time
+            
 
 player = Player(400, 300, 32, 32)
 player_bullets = []
@@ -323,12 +340,14 @@ def draw_background(display, tile):
         for y in range(0, SCREEN_HEIGHT, tile_height):
             display.blit(tile, (x, y))
 
-def display_unlocked_message(display, message):
-    font = pygame.font.SysFont(None, 30)
+def display_unlocked_message(display, message, player_x, player_y, timer):
+    font = pygame.font.SysFont(None, 20)  
     text = font.render(message, True, (255, 255, 255))
-    display.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 100))
-    pygame.display.update()
-    pygame.time.delay(2000)  # Display for 2 seconds
+    text_width, text_height = font.size(message)
+    text_x = player_x + 16 - text_width // 2  # Center the text above player
+    text_y = player_y - 20  # Position it above the player
+    display.blit(text, (text_x, text_y))
+    return timer  # Return the timer value to continue counting
 
 def main():
     global wave  # Declare wave as global
@@ -338,7 +357,8 @@ def main():
     shooting = False
     unlocked_weapon_message = None
     weapon_unlocked = False  # Flag to track if a weapon was unlocked
-    
+    unlocked_weapon_message_timer = 0
+
     while True:
         draw_background(display, parking_lot_tile)  # Draw the tiled background
 
@@ -358,13 +378,10 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_t:  # Press "T" key for weapon upgrade menu
                     show_weapon_switch_menu()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:  # Press "P" **ADMIN GUN**
+                    player.switch_gun('admin')        
             
-            unlocked_weapon = player.can_unlock_weapon(wave)
-            if unlocked_weapon:
-                display_unlocked_message(display, f'Unlocked {unlocked_weapon}!')
-                unlocked_weapon_message = None  # Clear the message after displaying
-
-
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_a]:
@@ -394,11 +411,12 @@ def main():
             if zombie.x < player.x + player.width and zombie.x + 32 > player.x and zombie.y < player.y + player.height and zombie.y + 32 > player.y:
                 player.health -= 1
                 if player.health <= 0:
-                    show_game_over_menu()
+                    show_game_over_menu() #End Screen
                     player.health = 100
                     player.x = 400
                     player.y = 300
                     zombies.clear()
+                    player.reset_weapon()
                     player_bullets.clear()
                     wave = 1
                     spawn_zombies(wave)
@@ -417,13 +435,28 @@ def main():
                             player_bullets.remove(bullet)
                     except ValueError:
                         pass
+        
+
+        if wave == 3:
+            unlocked_weapon_message = "Shotgun"               
+        elif wave == 5:
+            unlocked_weapon_message = "Submachine Gun"
+        elif wave == 5:
+            unlocked_weapon_message = "Rifle" 
+        elif wave == 5:
+            unlocked_weapon_message = "Sniper"          
+
+        if unlocked_weapon_message_timer > 0:
+            unlocked_weapon_message_timer -= 1
+            display_unlocked_message(display, f'Unlocked {unlocked_weapon_message}', player.x, player.y - 20, unlocked_weapon_message_timer)
+
 
         # Check if all zombies are dead to spawn a new wave
         if not zombies:
             wave += 1
             unlocked_weapon = player.can_unlock_weapon(wave)  # Check for weapon unlocking
             if unlocked_weapon:
-                unlocked_weapon_message = f'Unlocked {unlocked_weapon}!'
+                unlocked_weapon_message_timer = fps * 2
             spawn_zombies(wave)
 
         draw_wave_number(display, wave)  # Draw the wave number
