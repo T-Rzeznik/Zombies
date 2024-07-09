@@ -20,8 +20,17 @@ Map:
  
 
 
+Patch 0.00023
+-------------------------------------
+-Player
+Players now regenerate health after 1 second of not taking damage from a zombie.
+    -Player attributes 
+        Stamina: Affects how much the player Health regens per regen tick
+        Resiliance: Afftects how long it takes before health regen starts
 
 
+Notes: Still working on balancing the game, cleaning code
+-------------------------------------
 
 Bug Fix 0.00021
 -------------------------------------

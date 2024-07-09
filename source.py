@@ -68,13 +68,16 @@ class Player:
         #Attributes
         self.health = 100
         self.max_health = 100 
-        self.agility = 10 # Speed
-        self.endurance = 10 # health regen
+        self.agility = 10 
+        self.endurance = 10 
+        self.resilience = 10  
         self.luck = 5
         self.unlocked_weapons = ['pistol']  # Start with pistol unlocked
         self.gun = 'pistol'  # current gun
         self.last_shot = 0
         self.shot_delay = 500  # milliseconds between shots for semi-auto guns
+        self.last_hit_time = 0
+        self.attacking = False  # Added to track if the zombie is attacking the player
         self.damage = {
             'pistol': 1,
             'shotgun': 1,
@@ -92,10 +95,12 @@ class Player:
             'admin': 10
         }
 
+        
+
     def switch_gun(self, new_gun):
         self.gun = new_gun
 
-    def display_current_gun(self, display):  # Added method
+    def display_current_gun(self, display): 
         font = pygame.font.SysFont(None, 30)
         text = font.render(f'Current Gun: {self.gun.capitalize()}', True, (255, 255, 255))
         display.blit(text, (SCREEN_WIDTH - text.get_width() - 10, 10))
@@ -215,12 +220,6 @@ class Player:
                     player_bullets.append(PlayerBullet(self.x + self.width // 2, self.y + self.height // 2, mouse_x, mouse_y, angle_offset, damage=self.damage['admin'], max_penetration=self.penetration['admin']))
                 self.last_shot = current_time
             
-
-player = Player(400, 300, 32, 32)
-player_bullets = []
-zombies = []
-wave = 1
-
 def spawn_zombies(wave):
     for _ in range(wave * 5):  # Increase number of zombies with each wave
         x = random.randint(0, SCREEN_WIDTH)
@@ -349,10 +348,17 @@ def display_unlocked_message(display, message, player_x, player_y, timer):
     display.blit(text, (text_x, text_y))
     return timer  # Return the timer value to continue counting
 
+player = Player(400, 300, 32, 32)
+player_bullets = []
+zombies = []
+wave = 1
+
 def main():
     global wave  # Declare wave as global
     show_start_menu()
     spawn_zombies(wave)
+
+    player_health_regen_timer = pygame.time.get_ticks()
 
     shooting = False
     unlocked_weapon_message = None
@@ -410,6 +416,7 @@ def main():
             # Check for collision with player
             if zombie.x < player.x + player.width and zombie.x + 32 > player.x and zombie.y < player.y + player.height and zombie.y + 32 > player.y:
                 player.health -= 1
+                player.last_hit_time = pygame.time.get_ticks()
                 if player.health <= 0:
                     show_game_over_menu() #End Screen
                     player.health = 100
@@ -445,7 +452,6 @@ def main():
             unlocked_weapon_message = "Rifle" 
         elif wave == 5:
             unlocked_weapon_message = "Sniper"          
-
         if unlocked_weapon_message_timer > 0:
             unlocked_weapon_message_timer -= 1
             display_unlocked_message(display, f'Unlocked {unlocked_weapon_message}', player.x, player.y - 20, unlocked_weapon_message_timer)
@@ -459,9 +465,19 @@ def main():
                 unlocked_weapon_message_timer = fps * 2
             spawn_zombies(wave)
 
-        draw_wave_number(display, wave)  # Draw the wave number
+        draw_wave_number(display, wave) 
         player.display_current_gun(display)  # Display current gun
 
+        # Implement health regeneration with delay affected by resilience
+        current_time = pygame.time.get_ticks()
+        regen_delay = 1000 - (player.resilience // 10) * 100   
+        if current_time - player_health_regen_timer > 1000:  # Regenerate health every second
+            if current_time - player.last_hit_time > regen_delay:  # Only regenerate if the calculated delay has passed since last hit
+                if player.health < player.max_health:
+                    player.health += player.endurance  
+                    if player.health > player.max_health:
+                        player.health = player.max_health
+            player_health_regen_timer = current_time
 
         clock.tick(fps)
         pygame.display.update()
