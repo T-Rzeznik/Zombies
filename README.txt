@@ -18,10 +18,23 @@ Map:
 |Patch Notes|
  -----------
  
+Bug Fix 0.000231
+-------------------------------------
+Code Clean
+Note: Zombies kill way to fast, there needs to be a delay so that the player cant take damage (after a dealy or maybe only so many can hit at once)
+-------------------------------------
+
+Patch 0.00023
+-------------------------------------
+-Player
+Players now regenerate health after 1 second of not taking damage from a zombie.
+    -Player attributes 
+        Stamina: Affects how much the player Health regens per regen tick
+        Resiliance: Afftects how long it takes before health regen starts
 
 
-
-
+Notes: Still working on balancing the game, cleaning code
+-------------------------------------
 
 Bug Fix 0.00021
 -------------------------------------
