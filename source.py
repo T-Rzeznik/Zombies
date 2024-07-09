@@ -358,12 +358,13 @@ def main():
     show_start_menu()
     spawn_zombies(wave)
 
-    player_health_regen_timer = pygame.time.get_ticks()
+    
 
     shooting = False
     unlocked_weapon_message = None
     weapon_unlocked = False  # Flag to track if a weapon was unlocked
     unlocked_weapon_message_timer = 0
+    player_health_regen_timer = pygame.time.get_ticks()
 
     while True:
         draw_background(display, parking_lot_tile)  # Draw the tiled background
@@ -387,7 +388,10 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:  # Press "P" **ADMIN GUN**
                     player.switch_gun('admin')        
-            
+
+        if shooting:
+            player.shoot(mouse_x, mouse_y)
+
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_a]:
@@ -400,9 +404,6 @@ def main():
             player.y -= 3
         if keys[pygame.K_s]:
             player.y += 3
-
-        if shooting:
-            player.shoot(mouse_x, mouse_y)
 
         player.main(display)
         player.draw_health_bar(display)  # Draw the health bar
