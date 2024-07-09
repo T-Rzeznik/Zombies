@@ -18,7 +18,11 @@ Map:
 |Patch Notes|
  -----------
  
-
+Bug Fix 0.000231
+-------------------------------------
+Code Clean
+Note: Zombies kill way to fast, there needs to be a delay so that the player cant take damage (after a dealy or maybe only so many can hit at once)
+-------------------------------------
 
 Patch 0.00023
 -------------------------------------

@@ -358,8 +358,6 @@ def main():
     show_start_menu()
     spawn_zombies(wave)
 
-    
-
     shooting = False
     unlocked_weapon_message = None
     weapon_unlocked = False  # Flag to track if a weapon was unlocked
@@ -368,7 +366,7 @@ def main():
 
     while True:
         draw_background(display, parking_lot_tile)  # Draw the tiled background
-
+        current_time = pygame.time.get_ticks()
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
         for event in pygame.event.get():
@@ -416,8 +414,8 @@ def main():
             zombie.main(display)
             # Check for collision with player
             if zombie.x < player.x + player.width and zombie.x + 32 > player.x and zombie.y < player.y + player.height and zombie.y + 32 > player.y:
-                player.health -= 1
                 player.last_hit_time = pygame.time.get_ticks()
+                player.health -= 1
                 if player.health <= 0:
                     show_game_over_menu() #End Screen
                     player.health = 100
@@ -429,7 +427,7 @@ def main():
                     wave = 1
                     spawn_zombies(wave)
                     show_start_menu()
-
+        
         # Collision detection
         for bullet in player_bullets[:]:
             for zombie in zombies[:]:
@@ -470,7 +468,6 @@ def main():
         player.display_current_gun(display)  # Display current gun
 
         # Implement health regeneration with delay affected by resilience
-        current_time = pygame.time.get_ticks()
         regen_delay = 1000 - (player.resilience // 10) * 100   
         if current_time - player_health_regen_timer > 1000:  # Regenerate health every second
             if current_time - player.last_hit_time > regen_delay:  # Only regenerate if the calculated delay has passed since last hit
